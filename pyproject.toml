@@ -1,0 +1,31 @@
+[project]
+name = "research_crew"
+version = "0.1.0"
+description = "research_crew using crewAI"
+authors = [{ name = "Sai Venkat", email = "vsvgupta8@gmail.com" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai[tools,anthropic]==1.12.2"
+]
+
+[project.scripts]
+research_crew = "research_crew.main:run"
+run_crew = "research_crew.main:run"
+train = "research_crew.main:train"
+replay = "research_crew.main:replay"
+test = "research_crew.main:test"
+run_with_trigger = "research_crew.main:run_with_trigger"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "crew"
+
+# lancedb 0.30.x publishes wheels for Linux/macOS only; CrewAI's stack still
+# resolves it on Windows and uv sync fails. Pin a version that ships win_amd64.
+[tool.uv]
+override-dependencies = [
+    "lancedb==0.26.1",
+]

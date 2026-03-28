@@ -1,0 +1,151 @@
+research_task:
+  description: >
+    The user may supply {topic} as either a company name or an NSE/BSE ticker.
+    First, resolve the correct Indian listing: confirm exchange (NSE and/or BSE),
+    symbol, and ISIN when discoverable. If ambiguous (name clash), state options
+    and proceed with the most likely large-cap listing, noting uncertainty.
+
+    Perform deep desk research using the latest data as of {current_year}.
+    Prioritize these source types (use multiple where possible): stock screener
+    websites, the company’s investor-facing / IR pages, Indian institutional
+    research and public filings (e.g. annual reports, quarterly results and transcripts, SEBI/NSE/BSE
+    disclosures where applicable), **sell-side and domestic broker research** where
+    you can access summaries or public excerpts—e.g. **ICICI Securities / ICICI
+    Institutional Equities**, **HDFC Securities / HDFC Institutional Research**,
+    **Nuvama Institutional Equities** (and peers), **SBI Capital Markets / SBI
+    Securities**, plus other large Indian houses (Axis, Kotak, JM, Motilal
+    Oswal, etc.)—for forward-year **revenue and PAT estimates** (including **FY28**
+    when published), Reddit discussions, and Substack or similar independent
+    commentary. Label each finding with source type; separate facts from opinion
+    and flag unverified or crowd-sourced claims; note that full PDFs may be
+    client-only—use only what is legitimately available.
+
+    Produce a structured **research pack** (not the final investor report) that
+    organizes raw material into four blocks so the reporting analyst can draft
+    the full report:
+
+    **A) Fundamental inputs** — Business model, products/services, revenue and
+    profit growth (YoY, QoQ where available), EPS history and any guidance or
+    consensus snippets, margin trends, debt-to-equity, interest coverage, OCF/FCF
+    trends, valuation multiples (P/E, P/B, EV/EBITDA, dividend yield) vs industry
+    and top 3 listed Indian peers where you can identify them, industry/CAGR/moat
+    notes, R&D/innovation, macro/sector/company financial risks, recent catalysts
+    (earnings, M&A, partnerships, launches, regulation/policy). Include bull/bear
+    talking points and short vs long-term hooks as *evidence-backed notes*, not
+    final verdict prose.
+
+    **B) Technical inputs** — Price, recent % moves, 52W and notable highs/lows,
+    support/resistance hypotheses, moving averages (20/50/100/200) and price
+    position, RSI/MACD/Stochastic if available, trend view, pattern/volume notes,
+    and optional trade-plan style levels (entry/target/stop) only if justified;
+    mark data as of a stated date or “as found in sources.”
+
+    **C) News & sentiment inputs** — Brief market context (Nifty/Sensex, sector,
+    global cues, FX/commodities if relevant). List 5–10 recent company-specific
+    items with date, headline, one-line summary, and Positive/Negative/Neutral
+    tag. Recurring themes and a proposed sentiment score (0–10) with reasoning.
+
+    **D) Peer & screener inputs** — Comparison table-ready bullets vs top 3
+    competitors (growth, margins, multiples, debt). Names of 2–3 alternative
+    NSE/BSE ideas in the same sector that screens or commentary suggest as
+    stronger/undervalued (clearly marked as starting points for further due
+    diligence).
+
+    **E) Valuation-metrics inputs (for `valuation_metrics_calculator`)** — When
+    sources allow, add a small explicit block with **labeled numbers** (INR crores,
+    same scale for every line):
+    - **net_profit**: net profit on a **trailing** basis aligned to the latest
+      filings (use **9MFY26 TTM** methodology if that is your standard—annualize
+      9M PAT or use reported TTM—state which).
+    - **future_profit**: **FY28** (or clearly named forward year) **estimated /
+      consensus net profit**—this is the “future” in Future P/E, not TTM. Prefer
+      figures attributed to **institutional research** when available—e.g. **ICICI
+      research**, **HDFC research**, **Nuvama research**, **SBI research**, or
+      other major Indian broker estimates (state house name and report date);
+      otherwise use company guidance or a clear consensus range from screeners.
+    - **FY28 revenue** (optional but preferred): forward revenue estimate for the
+      same FY as future_profit, for context—again often from the same broker
+      reports above (the tool still needs two historical revenue points below for
+      implied sales growth).
+    - **current_revenue** / **prior_revenue**: two **comparable** revenue figures
+      for the implied sales-growth calculation—typically **current** = revenue on
+      the same TTM basis as net_profit (e.g. 9MFY26 TTM sales), **prior** =
+      revenue from the period **one year earlier** on the same TTM convention, OR
+      two fiscal years exactly **growth_period_years** apart if you override T.
+    - **market_cap**, **operating_cash_flow**, **EBITDA**: same reporting date /
+      TTM basis as far as possible; note “Not verified” if missing.
+    - **growth_period_years**: default **2.25** only when that matches the
+      **year-fraction from your earnings anchor (e.g. 9MFY26 TTM “as-of” date) to
+      the end of FY28** used for forward estimates. If your forward year or anchor
+      differs, **compute the actual span in years** (e.g. 2.0 or 2.5) and state
+      it here so the analyst can pass it into the tool instead of 2.25.
+
+    If a figure cannot be verified from sources, write “Not verified — needs
+    primary data” instead of inventing it.
+  expected_output: >
+    A single structured markdown document with clear headings: Resolved
+    identity (name, ticker(s), exchange(s), ISIN if known), then sections A, B, C,
+    D, and E (valuation-metric inputs, including FY28 forward profit when
+    available and TTM/9MFY26 labels) as above. Include at least one markdown table
+    in the fundamental or peer block when numeric comparisons exist; otherwise
+    state what is missing. No code fences.
+  agent: researcher
+
+reporting_task:
+  description: >
+    You are a world-class equity research analyst, technical analyst, and
+    financial news summarizer combined. Using **only** the prior task’s research
+    pack as the factual backbone (and clearly stating gaps where data was
+    missing or unverified), produce a **complete 360° analysis** for the Indian
+    stock (NSE/BSE) identified in the context.
+
+    The final report must have **four main sections** with the structure below.
+    Interpolate the stock name/ticker from the research. Use clear headings.
+    Include **at least 1–2 tables** in the body. Be data-backed but readable for
+    an **intermediate** investor. Add a short disclaimer that this is
+    informational, not personalized investment advice, and figures should be
+    verified against exchange/broker data.
+
+    When the research pack’s block **E** (or equivalent) includes **numeric**
+    values, you **must** call `valuation_metrics_calculator` with:
+    - **net_profit** = trailing PAT (e.g. **9MFY26 TTM** per the pack),
+    - **future_profit** = **FY28** (or pack-stated forward year) **estimated net
+      profit**—not TTM,
+    - **current_revenue** / **prior_revenue** = the pair defined in the pack for
+      implied sales growth (same TTM conventions as described there),
+    - **market_cap**, **operating_cash_flow**, **EBITDA** as given,
+    - **growth_period_years** = **2.25** only if the pack says that matches the
+      span from the **TTM anchor to FY28**; otherwise use the **pack’s computed
+      years** value. All amounts in one unit (e.g. INR crores).
+
+    Paste the tool output under fundamentals (or “Derived metrics”) and
+    interpret; if any required input is missing, skip the tool and list what was
+    unavailable.
+
+    **1) FUNDAMENTAL ANALYSIS** — Company overview; financial health (revenue
+    and profit growth YoY/QoQ, EPS trends and projections, margins, D/E, interest
+    coverage, OCF/FCF); valuation vs competitors (P/E, P/B, EV/EBITDA, dividend
+    yield vs industry avg and top 3 peers); growth potential (industry, TAM/CAGR,
+    moat, share, R&D); risk analysis (macro, sector, financial); recent catalysts;
+    **Verdict** with Bull case, Bear case, short-term (3–6 months) and long-term
+    (3–5 years) outlook, and a brief “Would Warren Buffett invest? Why/why not?”
+    framed explicitly as **opinion**, not fact.
+
+    **2) TECHNICAL ANALYSIS** — Price and % changes, 52W and ATH/ATL if
+    available, support/resistance, MAs and price vs each, RSI/MACD/Stochastic
+    and interpretation, trend, patterns, volume; optional trading plan
+    (entry/target/stop) if suitable; **Technical summary** in 2–3 sentences.
+
+    **3) NEWS & SENTIMENT** — Market-wide context; 5–10 company-specific items
+    with date, headline, summary, P/N/N tag; themes; overall sentiment score
+    (0–10) with reasoning.
+
+    End with **Key Takeaways** — exactly **5** bullet points summarizing the
+    overall view.
+  expected_output: >
+    One polished markdown report (no ``` fenced code blocks) with sections 1–4
+    and Key Takeaways; at least two markdown tables total; professional tone.
+  agent: reporting_analyst
+  context:
+    - research_task
+  output_file: output/report.md
