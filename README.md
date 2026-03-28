@@ -1,54 +1,92 @@
-# ResearchCrew Crew
+# Stock Analyzer Crew
 
-Welcome to the ResearchCrew Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+A [CrewAI](https://crewai.com) project that runs a **two-agent pipeline** to research an **Indian listed stock** (NSE/BSE) and produce a structured **equity report**. The researcher gathers and organizes sources; the reporting analyst writes the final document and can run **deterministic valuation helpers** from your research numbers.
 
-## Installation
+## What it does
 
-Ensure you have Python >=3.10 <3.14 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
+1. **Researcher** — Resolves the correct listing when you pass a **company name or ticker**, searches the web with **Serper**, and compiles a **research pack**: fundamentals, technical context, news and sentiment, peers, and (when data exists) labeled inputs for valuation metrics—including guidance to use **broker research** (e.g. ICICI, HDFC, Nuvama, SBI and peers) for **forward estimates** such as **FY28** PAT/revenue where available, plus **screener** and **filings**-aligned **TTM** figures (e.g. **9MFY26 TTM** style anchors as defined in `tasks.yaml`).
 
-First, if you haven't already, install uv:
+2. **Reporting analyst** — Consumes that pack (via task `context`) and outputs a **360°-style report** (fundamentals, technicals, news/sentiment, key takeaways). It may call **`valuation_metrics_calculator`** when the pack includes the required numeric fields (trailing profit, forward profit, market cap, OCF, EBITDA, two revenue points, and optional custom `growth_period_years`).
+
+Final markdown is written to **`output/report.md`**.
+
+> **Disclaimer:** Outputs are for **informational** use only—not investment advice. Verify all numbers against **NSE/BSE**, company filings, and your broker. Model and search results can be wrong or outdated.
+
+## Tech stack
+
+- **Python** 3.10–3.13  
+- **CrewAI** with **`crewai[tools,anthropic]`** (Claude for LLM calls)  
+- **Tools:** [Serper](https://serper.dev) (Google search), custom **valuation metrics** tool (`src/research_crew/tools/valuation_metrics_tool.py`)  
+- **Dependency manager:** [uv](https://docs.astral.sh/uv/) (used by `crewai install` / `crewai run`)
+
+### Windows note
+
+This repo pins **`lancedb==0.26.1`** via `[tool.uv] override-dependencies` in `pyproject.toml` because **newer `lancedb` wheels** used by the stack **omit `win_amd64`**, which otherwise breaks `uv sync` on Windows.
+
+## Repository layout
+
+| Path | Role |
+|------|------|
+| `src/research_crew/config/agents.yaml` | Agent roles, backstories, **`llm`** model ids |
+| `src/research_crew/config/tasks.yaml` | Task descriptions, expected outputs, research/report structure |
+| `src/research_crew/crew.py` | Wires agents, tasks, **Serper** + **valuation** tools, **`max_rpm`** throttling |
+| `src/research_crew/main.py` | Run inputs: **`topic`** (stock name/ticker), **`current_year`** |
+| `knowledge/` | Optional knowledge files for the crew |
+| `.env.example` | Template for secrets (copy to **`.env`**) |
+
+## Setup
+
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and ensure **Python** is available.
+
+2. Clone the repo and enter the project root:
+
+   ```bash
+   cd research_crew
+   ```
+
+3. Install dependencies:
+
+   ```bash
+   crewai install
+   ```
+
+4. Copy **`.env.example`** to **`.env`** and set:
+
+   - **`ANTHROPIC_API_KEY`** — [Anthropic console](https://console.anthropic.com/)  
+   - **`SERPER_API_KEY`** — [Serper](https://serper.dev)  
+   - **`MODEL`** (optional if each agent sets `llm` in `agents.yaml`) — e.g. `anthropic/claude-sonnet-4-20250514`
+
+   Never commit **`.env`** (it is listed in **`.gitignore`**).
+
+## Running
+
+Set the stock under test in **`src/research_crew/main.py`** (`inputs['topic']`), then:
 
 ```bash
-pip install uv
+crewai run
 ```
 
-Next, navigate to your project directory and install the dependencies:
-
-(Optional) Lock the dependencies and install them by using the CLI command:
-```bash
-crewai install
-```
-### Customizing
-
-**Add your `OPENAI_API_KEY` into the `.env` file**
-
-- Modify `src/research_crew/config/agents.yaml` to define your agents
-- Modify `src/research_crew/config/tasks.yaml` to define your tasks
-- Modify `src/research_crew/crew.py` to add your own logic, tools and specific args
-- Modify `src/research_crew/main.py` to add custom inputs for your agents and tasks
-
-## Running the Project
-
-To kickstart your crew of AI agents and begin task execution, run this from the root folder of your project:
+Or:
 
 ```bash
-$ crewai run
+uv run run_crew
 ```
 
-This command initializes the research_crew Crew, assembling the agents and assigning them tasks as defined in your configuration.
+The console prints the final result; the report file is **`output/report.md`**.
 
-This example, unmodified, will run the create a `report.md` file with the output of a research on LLMs in the root folder.
+## Customization
 
-## Understanding Your Crew
+- Change **models** in `agents.yaml` (`llm:` per agent).  
+- Adjust **research depth, sources, and report sections** in `tasks.yaml`.  
+- Tune **API rate limiting** in `crew.py` (`max_rpm` on the `Crew`).  
+- Add tools in `crew.py` and implement them under `src/research_crew/tools/`.
 
-The research_crew Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
+## Further reading
 
-## Support
+- [CrewAI documentation](https://docs.crewai.com)  
+- [Agents (YAML)](https://docs.crewai.com/concepts/agents)  
+- [Tasks (YAML)](https://docs.crewai.com/concepts/tasks)
 
-For support, questions, or feedback regarding the ResearchCrew Crew or crewAI.
-- Visit our [documentation](https://docs.crewai.com)
-- Reach out to us through our [GitHub repository](https://github.com/joaomdmoura/crewai)
-- [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- [Chat with our docs](https://chatg.pt/DWjSBZn)
+## License / project meta
 
-Let's create wonders together with the power and simplicity of crewAI.
+Project structure originates from the CrewAI crew template; logic and prompts are customized for **Indian equity research** workflows.
